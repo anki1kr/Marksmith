@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marksmith</title>
+<meta name="description" content="A class's results, one sheet, one run. Marksmith collects a whole class's university results into Excel and PDF.">
+<style>
+  :root { --bg:#f5f6f8; --card:#fff; --ink:#1c2333; --mut:#6b7280; --acc:#2563eb;
+          --line:#dcdfe4; --line-soft:#eef0f3; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:16px/1.6 system-ui,Segoe UI,sans-serif; background:var(--bg); color:var(--ink);
+         font-variant-numeric:tabular-nums; }
+  .wrap { max-width:960px; margin:0 auto; padding:0 16px 80px; }
+  header { padding:72px 0 40px; }
+  h1 { font-size:40px; font-weight:600; letter-spacing:-.02em; margin:0 0 8px; }
+  .tag { font-size:20px; color:var(--mut); margin:0 0 20px; }
+  .lede { font-size:17px; max-width:62ch; margin:0 0 28px; }
+  .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  .btn { display:inline-block; border-radius:8px; padding:12px 20px; font-weight:500; font-size:15px;
+         text-decoration:none; background:#e8eaed; color:var(--ink); transition:background-color .12s ease; }
+  .btn:hover { background:#dcdfe4; }
+  .btn.primary { background:var(--acc); color:#fff; }
+  .btn.primary:hover { background:#1d4ed8; }
+  :focus-visible { outline:2px solid var(--acc); outline-offset:2px; }
+  figure { margin:0 0 56px; }
+  figure img { width:100%; display:block; border:1px solid var(--line); border-radius:12px; background:#fff; }
+  figcaption { color:var(--mut); font-size:14px; margin-top:10px; }
+  h2 { font-size:22px; font-weight:600; margin:0 0 16px; }
+  section { margin-bottom:56px; }
+  ol, ul { margin:0; padding-left:22px; }
+  li { margin-bottom:8px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; }
+  .card h3 { font-size:15px; font-weight:600; margin:0 0 6px; }
+  .card p { font-size:14px; color:var(--mut); margin:0; }
+  code { font-family:Consolas,monospace; font-size:.9em; background:var(--line-soft);
+         padding:2px 6px; border-radius:4px; }
+  pre { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px;
+        overflow-x:auto; font-size:14px; }
+  pre code { background:none; padding:0; }
+  .note { border-left:3px solid var(--acc); padding:4px 0 4px 16px; color:var(--mut); font-size:15px; }
+  footer { border-top:1px solid var(--line); padding-top:24px; color:var(--mut); font-size:14px; }
+  a { color:var(--acc); }
+  @media (prefers-reduced-motion: reduce) { .btn { transition:none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Marksmith</h1>
+    <p class="tag">A class's results, one sheet, one run.</p>
+    <p class="lede">A teacher loads a list of roll numbers. Marksmith opens the university
+      result portal for each student, reads the report card, and hands back a class marks
+      register in Excel plus a PDF of every report card. It runs on your own computer, so
+      student data never leaves it.</p>
+    <div class="row">
+      <a class="btn primary" href="https://github.com/anki1kr/Marksmith/archive/refs/heads/main.zip">Download</a>
+      <a class="btn" href="https://github.com/anki1kr/Marksmith">View on GitHub</a>
+    </div>
+  </header>
+
+  <figure>
+    <img src="img/dashboard.png" alt="The Marksmith dashboard: a captcha prompt for the current student, progress counters reading 3 of 4 processed, download buttons, and a table of students with their status, total, SGPA and CGPA.">
+    <figcaption>The dashboard while a class is running. Sample data shown.</figcaption>
+  </figure>
+
+  <section>
+    <h2>How it works</h2>
+    <ol>
+      <li>Load the class list — an Excel file or a CSV with a <code>Roll No</code> column.</li>
+      <li>Pick the semester and press Start.</li>
+      <li>For each student the portal's captcha appears on the dashboard. Read it, type it, press Enter.</li>
+      <li>Marksmith opens the report card, parses the marks, saves a PDF, and moves on.</li>
+      <li>Download the Excel, the combined PDF, or a zip of every student's PDF.</li>
+    </ol>
+    <p class="note">The captcha is the one manual step. The portal asks for one on every
+      lookup, so you type it per student — roughly two minutes for a class of forty.
+      Everything before and after it is automatic.</p>
+  </section>
+
+  <section>
+    <h2>What you get</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Marks Grid</h3>
+        <p>The class register: one row per student, a column block per subject with the
+          subject name over its code and components.</p>
+      </div>
+      <div class="card">
+        <h3>Report card PDFs</h3>
+        <p>One PDF per student, plus a single bookmarked PDF for the whole class in roll order.</p>
+      </div>
+      <div class="card">
+        <h3>Your master sheet, filled</h3>
+        <p>Marks dropped into the matching subject columns of your own sheet. The original
+          file is never changed.</p>
+      </div>
+      <div class="card">
+        <h3>Nobody left blank</h3>
+        <p>A student whose result did not come through reads <code>AB</code> in every mark
+          cell, so no roll number is silently dropped.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Getting started</h2>
+    <p>Windows: download the folder and double-click <code>run.bat</code>. The first run sets
+      itself up, which takes a few minutes. You need Python 3.10 or newer installed first.</p>
+    <pre><code>python -m venv .venv
+.venv\Scripts\python -m pip install -r requirements.txt
+.venv\Scripts\python -m playwright install chromium
+.venv\Scripts\python app.py</code></pre>
+    <p>The dashboard opens at <code>http://127.0.0.1:5001</code>.</p>
+  </section>
+
+  <section>
+    <h2>Supported portals</h2>
+    <p>J.C. Bose University of Science and Technology, YMCA, Faridabad. More universities
+      later — each one is a new portal to teach it.</p>
+  </section>
+
+  <section>
+    <h2>About your students' data</h2>
+    <p>Marksmith runs on the teacher's machine. Results, PDFs and your master sheet stay in a
+      folder on that computer. Nothing is uploaded, there is no account, and there is no
+      server holding marks.</p>
+  </section>
+
+  <footer>
+    <p>Marksmith is free and open source. <a href="https://github.com/anki1kr/Marksmith">Source on GitHub</a>.</p>
+  </footer>
+
+</div>
+</body>
+</html>
