@@ -1,4 +1,4 @@
-"""Playwright worker, result parser, PDF + Excel writers for JCBose Result Extractor.
+"""Playwright worker, result parser, PDF + Excel writers for Marksmith.
 
 The worker fills roll no + semester, shows the portal's captcha image in the
 dashboard and waits for the teacher to type it, then opens the report card.

@@ -1,4 +1,4 @@
-"""JCBose Result Extractor — local dashboard. Run: run.bat (or python app.py)"""
+"""Marksmith — local dashboard. Run: run.bat (or python app.py)"""
 import io
 import webbrowser
 import zipfile

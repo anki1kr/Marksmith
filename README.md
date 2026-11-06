@@ -1,8 +1,12 @@
-# JCBose Result Extractor
+# Marksmith
+
+A class's results, one sheet, one run.
 
 A small tool for a teacher to collect a whole class's semester results from the
-J.C. Bose University (YMCA) result portal in one go, and get them back as Excel
-sheets and PDFs.
+university result portal in one go, and get them back as Excel sheets and PDFs.
+
+Supported portal: **J.C. Bose University of Science and Technology, YMCA,
+Faridabad**. More universities later; each one is a new portal to teach it.
 
 You give it a list of roll numbers. It opens the result portal for each student,
 reads the report card, and saves everything neatly. The one thing it asks of you

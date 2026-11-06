@@ -1,5 +1,5 @@
 @echo off
-rem JCBose Result Extractor - one-click start (Windows).
+rem Marksmith - one-click start (Windows).
 rem First run: creates .venv, installs the Python packages and downloads Chromium (~150 MB).
 cd /d "%~dp0"
 where python >nul 2>nul || (echo Python 3.10+ not found. Install it from python.org and tick "Add python to PATH". & pause & exit /b 1)
