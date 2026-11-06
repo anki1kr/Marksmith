@@ -1,0 +1,14 @@
+# student data — never publish
+master_result*.xlsx
+output/
+~$*.xlsx
+
+__pycache__/
+*.pyc
+ruvector.db
+.swarm/agentdb-memory.db
+.claude-flow/policy/state.json
+
+# local virtualenv (run.bat creates it)
+.venv/
+.pytest_cache/

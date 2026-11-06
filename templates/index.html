@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JCBose Result Extractor</title>
+<style>
+  :root { --bg:#f5f6f8; --card:#fff; --ink:#1c2333; --mut:#6b7280; --acc:#2563eb;
+          --ok:#16a34a; --bad:#dc2626; --warn:#d97706;
+          --line:#dcdfe4; --line-soft:#eef0f3; }
+  * { box-sizing:border-box; }
+  /* figures are tabular everywhere: the page refreshes every second, and
+     proportional digits make every number jump as it updates */
+  body { margin:0; font:14px/1.5 system-ui,Segoe UI,sans-serif; background:var(--bg); color:var(--ink);
+         font-variant-numeric:tabular-nums; }
+  .wrap { max-width:1000px; margin:0 auto; padding:24px 16px 60px; }
+  h1 { font-size:20px; font-weight:600; margin:0 0 4px; }
+  .sub { color:var(--mut); margin:0 0 20px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:16px; }
+  .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  button, a.btn { border:0; border-radius:8px; padding:8px 16px; font-weight:500; cursor:pointer;
+           background:#e8eaed; color:var(--ink); text-decoration:none; display:inline-block; font-size:14px;
+           transition:background-color .12s ease; }
+  button:hover, a.btn:hover { background:#dcdfe4; }
+  button:disabled, a.btn.off { opacity:.45; cursor:not-allowed; pointer-events:none; }
+  button.primary { background:var(--acc); color:#fff; }
+  button.primary:hover { background:#1d4ed8; }
+  button.green { background:var(--ok); color:#fff; }
+  button.green:hover { background:#15803d; }
+  button.red { background:var(--bad); color:#fff; }
+  button.red:hover { background:#b91c1c; }
+  :focus-visible { outline:2px solid var(--acc); outline-offset:2px; }
+  select,input[type=file],input[type=text] { padding:8px; border:1px solid var(--line); border-radius:8px; background:#fff; font-size:14px; }
+  .banner { display:none; border-radius:12px; padding:16px; margin-bottom:16px; font-weight:500;
+            background:#fef3c7; border:1px solid #f59e0b; color:#92400e; }
+  .banner.show { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+  .banner .pulse { width:12px; height:12px; border-radius:50%; background:var(--warn);
+                   animation:pu 1.6s ease-in-out infinite; }
+  @keyframes pu { 50% { opacity:.35; } }
+  #capImg { height:48px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+  #capText { width:160px; font:500 18px/1 Consolas,monospace; letter-spacing:3px; padding:8px 12px; }
+  .stats { display:flex; gap:24px; flex-wrap:wrap; }
+  .stat { color:var(--mut); }
+  .stat b { font-size:24px; font-weight:600; display:block; color:var(--ink); }
+  .bar { height:8px; background:var(--line-soft); border-radius:4px; overflow:hidden; margin-top:12px; }
+  .bar i { display:block; height:100%; width:0; background:var(--acc); transition:width .3s ease; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th,td { text-align:left; padding:8px 12px; border-bottom:1px solid var(--line-soft); white-space:nowrap; }
+  th { font-weight:500; color:var(--mut); }
+  td.err { white-space:normal; color:var(--bad); max-width:260px; }
+  .pill { padding:2px 8px; border-radius:999px; font-size:12px; font-weight:500; }
+  .PENDING { background:#e8eaed; color:#374151; }
+  .CAPTCHA_REQUIRED { background:#fef3c7; color:#92400e; }
+  .PROCESSING { background:#dbeafe; color:#1d4ed8; }
+  .COMPLETED { background:#dcfce7; color:#166534; }
+  .FAILED { background:#fee2e2; color:#991b1b; }
+  .msg { color:var(--mut); margin-top:8px; min-height:1.4em; overflow-wrap:anywhere; }
+  .mono { font-family:Consolas,monospace; }
+  .cur { background:#eff6ff; }
+  /* a waiting captcha is the one thing that needs the teacher now, so the cue
+     stays, just gentler: no motion at all when the system asks for less */
+  @media (prefers-reduced-motion: reduce) {
+    .banner .pulse { animation:none; }
+    .bar i, button, a.btn { transition:none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>JCBose Result Extractor</h1>
+  <p class="sub">Load the class list (Excel or CSV), press Start, then type each captcha as it appears. Marks go into Excel and every report card becomes a PDF.</p>
+
+  <div id="banner" class="banner">
+    <span class="pulse"></span>
+    <span>Captcha for roll <b id="capRoll" class="mono"></b>:</span>
+    <img id="capImg" alt="captcha">
+    <input type="text" id="capText" maxlength="12" autocomplete="off" spellcheck="false" placeholder="type it">
+    <button class="green" onclick="sendCaptcha()">Submit (Enter)</button>
+    <button class="red" onclick="post('/api/skip')">Skip student</button>
+    <span id="capHint" class="msg" style="width:100%;margin:0;font-weight:400"></span>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <input type="file" id="file" accept=".xlsx,.xlsm,.csv">
+      <button onclick="upload()">Load Excel / CSV</button>
+      <span style="flex:1"></span>
+      <label>Semester
+        <select id="sem">
+          <option value="01">1</option><option value="02">2</option>
+          <option value="03">3</option><option value="04" selected>4</option>
+          <option value="05">5</option><option value="06">6</option>
+          <option value="07">7</option><option value="08">8</option>
+        </select>
+      </label>
+      <button class="primary" id="btnStart" onclick="start()">Start</button>
+      <button id="btnPause" onclick="post('/api/pause')">Pause</button>
+      <button id="btnResume" onclick="post('/api/resume')">Resume</button>
+      <button id="btnRetry" onclick="post('/api/retry-failed')">Retry failed</button>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="card">
+    <div class="stats">
+      <div class="stat"><b id="stProc">0 / 0</b>Processed</div>
+      <div class="stat"><b id="stOk" style="color:var(--ok)">0</b>Successful</div>
+      <div class="stat"><b id="stBad" style="color:var(--bad)">0</b>Failed</div>
+      <div class="stat"><b id="stRem">0</b>Remaining</div>
+      <div class="stat"><b id="stCur" class="mono" style="font-size:16px">—</b>Current roll</div>
+      <div class="stat"><b id="stPhase" style="font-size:16px">Idle</b>Status</div>
+    </div>
+    <div class="bar"><i id="bar"></i></div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <b>Downloads</b>
+      <a class="btn off" data-file="results.xlsx" href="/download/results.xlsx">Results Excel</a>
+      <a class="btn off" data-file="all-results.pdf" href="/download/all-results.pdf">All results (one PDF)</a>
+      <a class="btn off" data-file="pdfs.zip" href="/download/pdfs.zip">Per-student PDFs (zip)</a>
+      <a class="btn off" data-file="master-filled.xlsx" href="/download/master-filled.xlsx">Master sheet filled</a>
+    </div>
+    <div class="msg">On disk: <span class="mono" id="outPath"></span> · output/pdf/&lt;roll&gt;.pdf · output/all_results.pdf · output/raw/&lt;roll&gt;.html &amp; .png</div>
+  </div>
+
+  <div class="card" style="overflow-x:auto">
+    <table>
+      <thead><tr><th>#</th><th>Roll No</th><th>Name</th><th>Status</th>
+        <th>Total</th><th>SGPA</th><th>CGPA</th><th>Result</th><th>Error</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+let capKey = null, capHasImg = false;
+// the worker's own status names are for the log; the teacher reads plain words
+const LABEL = {PENDING:'Waiting', CAPTCHA_REQUIRED:'Type the captcha', PROCESSING:'Fetching',
+               COMPLETED:'Done', FAILED:'No result'};
+const sentence = s => s ? s[0].toUpperCase() + s.slice(1) : '';
+async function post(url, body) {
+  const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'},
+                              body: body ? JSON.stringify(body) : '{}'});
+  const j = await r.json().catch(()=>({}));
+  if (!r.ok) document.getElementById('msg').textContent = j.error || 'Error';
+  refresh();
+}
+function start() { post('/api/start', {semester: document.getElementById('sem').value}); }
+function sendCaptcha() {
+  const inp = document.getElementById('capText');
+  const text = inp.value.trim();
+  if (!text && capHasImg) { inp.focus(); return; }   // nothing typed yet
+  inp.value = '';
+  post('/api/captcha', {text});
+}
+document.getElementById('capText').addEventListener('keydown', e => { if (e.key === 'Enter') sendCaptcha(); });
+async function upload() {
+  const f = document.getElementById('file').files[0];
+  if (!f) { document.getElementById('msg').textContent = 'Choose a file first'; return; }
+  const fd = new FormData(); fd.append('file', f);
+  const r = await fetch('/api/upload', {method:'POST', body:fd});
+  const j = await r.json();
+  document.getElementById('msg').textContent = r.ok
+    ? `Loaded ${j.count} roll numbers` + (j.restored ? ` (${j.restored} already done in an earlier run)` : '')
+    : j.error;
+  refresh();
+}
+async function refresh() {
+  let st;
+  try { st = await (await fetch('/api/state')).json(); } catch { return; }
+  const c = st.counts;
+  document.getElementById('stProc').textContent = `${c.processed} / ${c.total}`;
+  document.getElementById('stOk').textContent = c.completed;
+  document.getElementById('stBad').textContent = c.failed;
+  document.getElementById('stRem').textContent = c.remaining;
+  document.getElementById('stCur').textContent = st.current || '—';
+  document.getElementById('stPhase').textContent = sentence(st.paused ? 'paused' : st.phase);
+  document.getElementById('bar').style.width = c.total ? (100*c.processed/c.total)+'%' : '0';
+  document.getElementById('outPath').textContent = st.output;
+  document.getElementById('msg').textContent = st.message || '';
+  for (const a of document.querySelectorAll('a.btn[data-file]'))
+    a.classList.toggle('off', !st.files[a.dataset.file]);
+
+  const cap = st.students.find(s => s.status === 'CAPTCHA_REQUIRED');
+  const show = !!cap && !st.paused;
+  document.getElementById('banner').classList.toggle('show', show);
+  if (show) {
+    document.getElementById('capRoll').textContent = cap.roll;
+    const key = cap.roll + ':' + st.captcha_png;
+    if (key !== capKey) {                 // a new captcha: swap image, clear box, focus it
+      capKey = key;
+      capHasImg = !!st.captcha_png;
+      const img = document.getElementById('capImg');
+      img.style.display = capHasImg ? '' : 'none';
+      if (capHasImg) img.src = 'data:image/png;base64,' + st.captcha_png;
+      document.getElementById('capHint').textContent = capHasImg ? ''
+        : 'Captcha image could not be captured: type it in the Chrome window (start with SHOW_BROWSER=1), then press Submit.';
+      const inp = document.getElementById('capText'); inp.value = ''; inp.focus();
+    }
+  } else capKey = null;
+
+  document.getElementById('tbody').innerHTML = st.students.map((s,i) => `
+    <tr class="${s.roll===st.current?'cur':''}">
+      <td>${i+1}</td><td class="mono">${s.roll}</td><td>${esc(s.name)}</td>
+      <td><span class="pill ${s.status}">${LABEL[s.status] || s.status}</span></td>
+      <td>${esc(s.total_marks)}</td><td>${esc(s.sgpa)}</td><td>${esc(s.cgpa)}</td><td>${esc(s.result)}</td>
+      <td class="err">${esc(s.error)}</td>
+    </tr>`).join('');
+}
+function esc(v){ return String(v??'').replace(/[<>&"]/g, ch=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[ch])); }
+setInterval(refresh, 1000); refresh();
+</script>
+</body>
+</html>
